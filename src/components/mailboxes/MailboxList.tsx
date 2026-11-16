@@ -9,7 +9,12 @@ import {
   RefreshCw, 
   Zap, 
   Layers,
-  ArrowRight
+  ArrowRight,
+  HelpCircle,
+  Sparkles,
+  Users,
+  Send,
+  Keyboard
 } from 'lucide-react';
 import { Mailbox } from '../../types';
 import { apiClient } from '../../utils/apiClient';
@@ -18,12 +23,20 @@ import { ConnectionModal } from './ConnectionModal';
 
 interface MailboxListProps {
   onStartCampaignClick: () => void;
+  isConnectModalOpen: boolean;
+  setIsConnectModalOpen: (open: boolean) => void;
+  onOpenShortcutsModal: () => void;
 }
 
-export const MailboxList: React.FC<MailboxListProps> = ({ onStartCampaignClick }) => {
+export const MailboxList: React.FC<MailboxListProps> = ({ 
+  onStartCampaignClick, 
+  isConnectModalOpen, 
+  setIsConnectModalOpen,
+  onOpenShortcutsModal
+}) => {
   const [mailboxes, setMailboxes] = useState<Mailbox[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showHowItWorks, setShowHowItWorks] = useState(true);
 
   const loadMailboxes = async () => {
     setIsLoading(true);
@@ -58,21 +71,21 @@ export const MailboxList: React.FC<MailboxListProps> = ({ onStartCampaignClick }
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-300">
-      {/* Top Banner & Stats Overview */}
+      {/* Top Banner & Quick Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <h1 className="text-2xl font-extrabold text-white tracking-tight">Connected Outgoing Inboxes</h1>
+            <h1 className="text-2xl font-extrabold text-white tracking-tight">Outgoing Inboxes & Pool Dashboard</h1>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-semibold">
-              Rotation Pool
+              Rotation Engine
             </span>
           </div>
           <p className="text-sm text-slate-400">
-            Multi-inbox pool with automatic burst ceilings (Gmail: 40, Outlook: 30, Zoho: 25, Custom: 60) and 6-hour reactive failover.
+            Multi-inbox pool with automated burst ceilings (Gmail: 40, Outlook: 30, Zoho: 25, Custom: 60) and 6-hour reactive failover.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <button
             onClick={loadMailboxes}
             className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
@@ -82,14 +95,92 @@ export const MailboxList: React.FC<MailboxListProps> = ({ onStartCampaignClick }
           </button>
 
           <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"
+            onClick={() => setIsConnectModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-lg shadow-indigo-600/30 transition-all cursor-pointer group"
           >
             <Plus className="w-4 h-4" />
-            Connect Mailbox
+            <span>Connect Mailbox</span>
+            <kbd className="hidden sm:inline px-1.5 py-0.2 bg-indigo-700/80 text-[10px] rounded font-mono">Ctrl+B</kbd>
+          </button>
+
+          <button
+            onClick={onStartCampaignClick}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white font-semibold text-xs shadow-lg shadow-cyan-600/20 transition-all cursor-pointer"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>New Campaign</span>
+            <kbd className="hidden sm:inline px-1.5 py-0.2 bg-cyan-700/80 text-[10px] rounded font-mono">Ctrl+N</kbd>
           </button>
         </div>
       </div>
+
+      {/* Interactive 4-Step Quick Start Onboarding Card */}
+      {showHowItWorks && (
+        <div className="glass-panel p-5 rounded-2xl border border-indigo-500/20 bg-indigo-950/10 relative overflow-hidden">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center">
+                <HelpCircle className="w-3.5 h-3.5" />
+              </div>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-indigo-300">
+                Simple 4-Step Workflow Guide
+              </h2>
+            </div>
+            <button
+              onClick={() => setShowHowItWorks(false)}
+              className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              Dismiss
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            {/* Step 1 */}
+            <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1.5">
+              <div className="flex items-center gap-2 font-bold text-white">
+                <span className="w-5 h-5 rounded-full bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-[10px] font-mono">1</span>
+                <span>Connect Inboxes</span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Add your Gmail, Outlook, Zoho, or business SMTP credentials. Encrypted with AES-256 locally.
+              </p>
+            </div>
+
+            {/* Step 2 */}
+            <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1.5">
+              <div className="flex items-center gap-2 font-bold text-white">
+                <span className="w-5 h-5 rounded-full bg-cyan-600/30 text-cyan-400 flex items-center justify-center text-[10px] font-mono">2</span>
+                <span>Import Contacts</span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Drag & drop any CSV or Excel file, or click <em>Load Demo Contacts</em>. Instant RFC 5322 validation.
+              </p>
+            </div>
+
+            {/* Step 3 */}
+            <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1.5">
+              <div className="flex items-center gap-2 font-bold text-white">
+                <span className="w-5 h-5 rounded-full bg-purple-600/30 text-purple-400 flex items-center justify-center text-[10px] font-mono">3</span>
+                <span>Compose & Pacing</span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Use fallback variables like <code className="text-purple-300 font-mono">{"{{first_name | there}}"}</code> with human micro-jitter delays.
+              </p>
+            </div>
+
+            {/* Step 4 */}
+            <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1.5">
+              <div className="flex items-center gap-2 font-bold text-white">
+                <span className="w-5 h-5 rounded-full bg-emerald-600/30 text-emerald-400 flex items-center justify-center text-[10px] font-mono">4</span>
+                <span>Auto-Rotation & Logs</span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Automated burst rotation & 6-hour failover. Monitor live streaming terminal in real-time.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Aggregate Pool Health Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -156,13 +247,22 @@ export const MailboxList: React.FC<MailboxListProps> = ({ onStartCampaignClick }
           <p className="text-xs text-slate-400 max-w-md mb-6 leading-relaxed">
             Connect your Gmail, Microsoft 365, Zoho, or custom business domain SMTP inboxes to enable multi-mailbox rotation and protect sender reputation.
           </p>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Connect Your First Inbox
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsConnectModalOpen(true)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-lg shadow-indigo-600/30 transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Connect Your First Inbox
+            </button>
+            <button
+              onClick={onOpenShortcutsModal}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white text-xs font-semibold transition-colors"
+            >
+              <Keyboard className="w-4 h-4 text-cyan-400" />
+              <span>Shortcuts</span>
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-4">
@@ -171,7 +271,7 @@ export const MailboxList: React.FC<MailboxListProps> = ({ onStartCampaignClick }
             {activeHealthy > 0 && (
               <button
                 onClick={onStartCampaignClick}
-                className="flex items-center gap-1.5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 transition-colors"
+                className="flex items-center gap-1.5 text-xs font-semibold text-cyan-400 hover:text-cyan-300 transition-colors cursor-pointer"
               >
                 <span>Launch New Campaign with this Pool</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -194,8 +294,8 @@ export const MailboxList: React.FC<MailboxListProps> = ({ onStartCampaignClick }
 
       {/* Connection Modal */}
       <ConnectionModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isConnectModalOpen}
+        onClose={() => setIsConnectModalOpen(false)}
         onSuccess={loadMailboxes}
       />
     </div>

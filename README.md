@@ -9,17 +9,33 @@
 
 **100% LOCALLY RUNNING DESKTOP SOFTWARE • ZERO EXTERNAL CLOUD BACKEND • EMBEDDED SQLITE DATABASE**
 
-*High-deliverability cold outreach software running completely offline on your computer with multi-mailbox rotation, reactive 6-hour failover, organic human pacing, and instant global desktop hotkey (`Ctrl + M`).*
+*High-deliverability cold outreach software running completely offline on your computer with multi-mailbox rotation, reactive 6-hour failover, organic human pacing, and instant global desktop hotkeys.*
 
 </div>
 
 ---
 
-## ⚡ Global Desktop Hotkey: `Ctrl + M`
+## ⚡ Desktop Hotkeys & Keyboard Shortcuts
 
-ColdMail Studio registers a desktop-wide global shortcut:
-- Press **`Ctrl + M`** (or **`Cmd + M`** on macOS) from anywhere on your operating system (even when minimized or running behind other windows) to immediately restore, focus, and reveal the ColdMail Studio dashboard.
-- Inside the application, pressing **`Ctrl + M`** instantly brings you back to the Inboxes / Dashboard overview.
+ColdMail Studio supports multiple global and in-app shortcuts to make navigation effortless:
+
+### 🌐 System-Wide Global Hotkeys (Works anywhere on desktop, even when minimized):
+| Shortcut | Action | Description |
+| :--- | :--- | :--- |
+| **`Ctrl + M`** (or `Cmd + M`) | Reveal & Focus App | Primary global shortcut to restore, focus, and open the dashboard |
+| **`Ctrl + Shift + M`** | Fail-Safe Hotkey | Guaranteed conflict-free if another OS program hooks `Ctrl+M` |
+| **`F9`** | 1-Key Quick Toggle | Instant single-key launcher to toggle dashboard to the front |
+
+### ⌨️ In-App Quick Navigation:
+| Shortcut | Action |
+| :--- | :--- |
+| **`Ctrl + 1`** | Navigate to Inboxes / Dashboard overview |
+| **`Ctrl + 2`** | Navigate to New Campaign Wizard |
+| **`Ctrl + 3`** | Navigate to Live Transmission Telemetry Console |
+| **`Ctrl + 4`** | Navigate to Transmission Audit Logs |
+| **`Ctrl + N`** | Quick New Campaign |
+| **`Ctrl + B`** | Open Connect Mailbox Modal |
+| **`Ctrl + /`** or **`?`** | Open Interactive Shortcuts Cheat Sheet |
 
 ---
 
@@ -34,7 +50,7 @@ Follow the instructions below depending on whether you already have the folder o
 If you already downloaded or extracted the project into your Downloads folder:
 
 1. **Open PowerShell or Terminal**.
-2. **Navigate into the project folder first** (CRITICAL: Do not run `npm install` from `C:\Users\Dell`):
+2. **Navigate into the project folder first** (*CRITICAL: Do not run `npm install` from `C:\Users\Dell`*):
    ```powershell
    cd "C:\Users\Dell\Downloads\EMail automation"
    ```
@@ -97,6 +113,45 @@ npm run dev
 
 ---
 
+## 🗑️ How to Completely Uninstall / Remove
+
+Since ColdMail Studio runs 100% locally with zero cloud footprint, all data is stored on your local disk. To cleanly and completely remove the software and its local SQLite database, run the following commands:
+
+### In Windows PowerShell:
+```powershell
+# 1. Delete the local embedded SQLite database and encryption vault:
+Remove-Item -Recurse -Force "$env:APPDATA\.email-automation" -ErrorAction SilentlyContinue
+
+# 2. Delete the project folder:
+# If in your Downloads folder:
+Remove-Item -Recurse -Force "C:\Users\Dell\Downloads\EMail automation" -ErrorAction SilentlyContinue
+
+# Or if you cloned it as Cold-Mail-studio:
+Remove-Item -Recurse -Force "Cold-Mail-studio" -ErrorAction SilentlyContinue
+```
+
+### In Windows Command Prompt (CMD):
+```cmd
+:: 1. Delete the local embedded SQLite database:
+rmdir /s /q "%APPDATA%\.email-automation"
+
+:: 2. Delete the project folder:
+rmdir /s /q "C:\Users\Dell\Downloads\EMail automation"
+:: OR if cloned:
+rmdir /s /q "Cold-Mail-studio"
+```
+
+### In macOS / Linux Terminal:
+```bash
+# 1. Delete the local SQLite database and keys:
+rm -rf ~/.email-automation
+
+# 2. Delete the project directory:
+rm -rf Cold-Mail-studio
+```
+
+---
+
 ## ⚠️ Common Errors & Troubleshooting
 
 ### Error: `ENOENT: no such file or directory, open 'C:\Users\Dell\package.json'`
@@ -105,7 +160,7 @@ npm error code ENOENT
 npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open 'C:\Users\Dell\package.json'
 ```
 #### Why this happens:
-Your terminal is currently located in your home folder (`C:\Users\Dell`) instead of the project directory where `package.json` resides.
+Your terminal is currently located in your user root folder (`C:\Users\Dell`) instead of the project directory where `package.json` resides.
 
 #### How to fix:
 Navigate into the folder before running any `npm` commands:
@@ -190,17 +245,11 @@ Sender mailboxes are grouped into profiles with micro-jitters to protect domain 
 
 ---
 
-## 🧪 Testing with Included Sample Contacts
+## 🧪 Testing with Included Sample Contacts & 1-Click Demo
 
-A pre-formatted sample file [`sample_contacts.csv`](./sample_contacts.csv) is included in the project:
-1. Open ColdMail Studio and click **Connect Mailbox** to add your sending inboxes.
-2. Click **New Campaign** in the navigation bar.
-3. In Step 2, drag and drop `sample_contacts.csv`.
-4. Observe the automatic detection:
-   - Valid RFC 5322 emails detected
-   - Duplicate email address quarantined
-   - Invalid email address flagged
-   - Empty company fields handled seamlessly via `{{company | your team}}` fallbacks.
+There are two ways to immediately test:
+1. **1-Click In-App Demo**: In Step 2 of the Campaign Wizard, simply click **`Load Demo Contacts`**. It will instantly populate contacts with valid rows, duplicate rows, and missing company fields to test fallbacks!
+2. **File Import**: Drag and drop the included [`sample_contacts.csv`](./sample_contacts.csv) file from the root directory.
 
 ---
 
@@ -217,6 +266,8 @@ A pre-formatted sample file [`sample_contacts.csv`](./sample_contacts.csv) is in
 | `npm run dev` | Launch development mode with hot-reloading |
 | `npm run build:ui` | Build frontend only |
 | `npm run build:electron` | Build Electron TypeScript backend only |
+| `rmdir /s /q "%APPDATA%\.email-automation"` | CMD: Clean remove local SQLite database & keys |
+| `Remove-Item -Recurse -Force "$env:APPDATA\.email-automation"` | PowerShell: Clean remove local database |
 
 ---
 

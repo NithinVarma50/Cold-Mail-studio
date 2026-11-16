@@ -4,6 +4,7 @@ import { MailboxList } from './components/mailboxes/MailboxList';
 import { WizardContainer } from './components/campaign-wizard/WizardContainer';
 import { LiveConsole } from './components/execution/LiveConsole';
 import { LogsView } from './components/logs/LogsView';
+import { ShortcutsModal } from './components/common/ShortcutsModal';
 import { CampaignProgress } from './types';
 import { apiClient } from './utils/apiClient';
 
@@ -11,6 +12,8 @@ export const App: React.FC = () => {
   const [currentTab, setCurrentTab] = useState<'mailboxes' | 'wizard' | 'console' | 'logs'>('mailboxes');
   const [activeProgress, setActiveProgress] = useState<CampaignProgress | null>(null);
   const [activeCampaignId, setActiveCampaignId] = useState<string | null>(null);
+  const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
+  const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
 
   // Subscribe to live execution status
   useEffect(() => {
@@ -29,7 +32,7 @@ export const App: React.FC = () => {
       setActiveProgress(prev => prev ? { ...prev, status: data.status } : null);
     });
 
-    // Listen for Ctrl+M desktop global shortcut
+    // Listen for Ctrl+M desktop global shortcut from Electron
     const unsubDashboard = apiClient.onNavigateDashboard(() => {
       console.log('Switched to Dashboard view via Ctrl+M global shortcut');
       setCurrentTab('mailboxes');
@@ -48,12 +51,14 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans select-none">
       {/* Top Application Navbar */}
       <Navbar
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
         activeProgress={activeProgress}
+        onOpenConnectModal={() => setIsConnectModalOpen(true)}
+        onOpenShortcutsModal={() => setIsShortcutsModalOpen(true)}
       />
 
       {/* Main View Area */}
@@ -61,6 +66,9 @@ export const App: React.FC = () => {
         {currentTab === 'mailboxes' && (
           <MailboxList
             onStartCampaignClick={() => setCurrentTab('wizard')}
+            isConnectModalOpen={isConnectModalOpen}
+            setIsConnectModalOpen={setIsConnectModalOpen}
+            onOpenShortcutsModal={() => setIsShortcutsModalOpen(true)}
           />
         )}
 
@@ -81,6 +89,12 @@ export const App: React.FC = () => {
           <LogsView />
         )}
       </main>
+
+      {/* Keyboard Shortcuts Cheatsheet Modal */}
+      <ShortcutsModal
+        isOpen={isShortcutsModalOpen}
+        onClose={() => setIsShortcutsModalOpen(false)}
+      />
     </div>
   );
 };

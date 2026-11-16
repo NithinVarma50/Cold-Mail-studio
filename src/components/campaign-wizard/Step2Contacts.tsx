@@ -9,7 +9,8 @@ import {
   ArrowLeft,
   Trash2,
   Table,
-  Check
+  Check,
+  Sparkles
 } from 'lucide-react';
 import { parseFile } from '../../utils/csvParser';
 import { CSVParseResult } from '../../types';
@@ -49,6 +50,45 @@ export const Step2Contacts: React.FC<Step2ContactsProps> = ({
     }
   };
 
+  const handleLoadSampleContacts = () => {
+    const sampleRows = [
+      { email: 'alex.rivera@techventures.io', first_name: 'Alex', last_name: 'Rivera', company: 'TechVentures', role: 'VP of Growth', industry: 'SaaS' },
+      { email: 'sarah.connor@cyberdyne.ai', first_name: 'Sarah', last_name: 'Connor', company: 'Cyberdyne Systems', role: 'Head of Engineering', industry: 'AI' },
+      { email: 'marcus.vance@apexcapital.co', first_name: 'Marcus', last_name: 'Vance', company: 'Apex Capital', role: 'Managing Partner', industry: 'Fintech' },
+      { email: 'elena.rostova@cloudscale.net', first_name: 'Elena', last_name: 'Rostova', company: 'CloudScale', role: 'CTO', industry: 'Cloud' },
+      { email: 'david.kim@innovatecorp.com', first_name: 'David', last_name: 'Kim', company: 'Innovate Corp', role: 'Director of Product', industry: 'Enterprise' },
+      { email: 'rachel.adams@solarisgreen.org', first_name: 'Rachel', last_name: 'Adams', company: '', role: 'Operations Lead', industry: 'CleanTech' },
+      { email: 'jordan.bell@stratasolutions.com', first_name: 'Jordan', last_name: 'Bell', company: 'Strata Solutions', role: 'Founder', industry: 'Consulting' },
+      { email: 'alex.rivera@techventures.io', first_name: 'Alex', last_name: 'Rivera', company: 'TechVentures', role: 'VP of Growth', industry: 'SaaS' },
+      { email: 'invalid-email-format-example', first_name: 'Test', last_name: 'Invalid', company: 'Broken Domain', role: 'QA', industry: 'Testing' }
+    ];
+
+    const headers = ['email', 'first_name', 'last_name', 'company', 'role', 'industry'];
+
+    setParsedData({
+      headers,
+      rows: sampleRows,
+      totalRows: sampleRows.length,
+      validRows: 7,
+      invalidRows: 1,
+      duplicateRows: 1,
+      previewData: sampleRows.slice(0, 8),
+      detectedMapping: {
+        email: 'email',
+        first_name: 'first_name',
+        last_name: 'last_name',
+        company: 'company'
+      }
+    });
+
+    setMapping({
+      email: 'email',
+      first_name: 'first_name',
+      last_name: 'last_name',
+      company: 'company'
+    });
+  };
+
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
@@ -70,36 +110,60 @@ export const Step2Contacts: React.FC<Step2ContactsProps> = ({
 
       {/* Upload Zone */}
       {!parsedData ? (
-        <div
-          onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={onDrop}
-          onClick={() => fileInputRef.current?.click()}
-          className={`glass-panel p-10 rounded-2xl border-2 border-dashed cursor-pointer transition-all flex flex-col items-center justify-center text-center ${
-            isDragging 
-              ? 'border-indigo-500 bg-indigo-500/10' 
-              : 'border-slate-800 hover:border-slate-700 bg-slate-900/60'
-          }`}
-        >
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
-            accept=".csv, .xlsx, .xls"
-            className="hidden"
-          />
-          <div className="w-14 h-14 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-4">
-            <UploadCloud className="w-7 h-7" />
+        <div className="space-y-4">
+          <div
+            onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={onDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`glass-panel p-10 rounded-2xl border-2 border-dashed cursor-pointer transition-all flex flex-col items-center justify-center text-center ${
+              isDragging 
+                ? 'border-indigo-500 bg-indigo-500/10' 
+                : 'border-slate-800 hover:border-slate-700 bg-slate-900/60'
+            }`}
+          >
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={e => e.target.files?.[0] && handleFile(e.target.files[0])}
+              accept=".csv, .xlsx, .xls"
+              className="hidden"
+            />
+            <div className="w-14 h-14 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 mb-4">
+              <UploadCloud className="w-7 h-7" />
+            </div>
+            <h3 className="text-sm font-bold text-white mb-1">
+              {isProcessing ? 'Validating and Parsing Columns...' : 'Drag & Drop CSV or Excel File Here'}
+            </h3>
+            <p className="text-xs text-slate-400 mb-4 max-w-sm">
+              Supports CSV, XLSX, and XLS with automated header recognition and syntax auditing.
+            </p>
+            <span className="px-4 py-2 rounded-xl bg-slate-800 text-xs font-semibold text-slate-200 hover:bg-slate-700 transition-colors">
+              Browse Local File
+            </span>
           </div>
-          <h3 className="text-sm font-bold text-white mb-1">
-            {isProcessing ? 'Validating and Parsing Columns...' : 'Drag & Drop CSV or Excel File Here'}
-          </h3>
-          <p className="text-xs text-slate-400 mb-4 max-w-sm">
-            Supports CSV, XLSX, and XLS with automated header recognition and syntax auditing.
-          </p>
-          <span className="px-4 py-2 rounded-xl bg-slate-800 text-xs font-semibold text-slate-200 hover:bg-slate-700 transition-colors">
-            Browse Local File
-          </span>
+
+          {/* 1-Click Sample Contacts Loader */}
+          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-white">Don't have a CSV file right now?</h4>
+                <p className="text-[11px] text-slate-400">Load sample pre-built outreach contacts with 1 click to test immediately.</p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleLoadSampleContacts}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-semibold text-xs transition-colors shadow-md shadow-cyan-600/20 cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Load Demo Contacts</span>
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-6">
@@ -117,7 +181,7 @@ export const Step2Contacts: React.FC<Step2ContactsProps> = ({
 
             <button
               onClick={() => { setParsedData(null); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
               Remove & Re-upload
@@ -265,7 +329,7 @@ export const Step2Contacts: React.FC<Step2ContactsProps> = ({
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors"
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back</span>
@@ -275,7 +339,7 @@ export const Step2Contacts: React.FC<Step2ContactsProps> = ({
           type="button"
           disabled={!isValid}
           onClick={onNext}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
         >
           <span>Continue to Compose Email</span>
           <ArrowRight className="w-4 h-4" />
