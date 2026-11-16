@@ -1,11 +1,12 @@
-import Database from 'better-sqlite3';
+import initSqlJs, { Database, SqlJsStatic } from 'sql.js';
 import path from 'path';
 import fs from 'fs';
 import { MailboxRecord, CampaignRecord, ContactRecord, SendLogRecord, MailboxStatus, CampaignStatus, ContactStatus, LogLevel } from '../types';
 import { initializeMasterKey } from './crypto';
 
-let db: Database.Database | null = null;
-let lastResetDateStr: string = '';
+let SQL: SqlJsStatic | null = null;
+let db: Database | null = null;
+let currentDbPath: string = '';
 
 export function getDatabasePath(customDir?: string): string {
   const dir = customDir || path.join(process.env.APPDATA || process.env.HOME || '.', '.email-automation');
@@ -15,19 +16,30 @@ export function getDatabasePath(customDir?: string): string {
   return path.join(dir, 'coldmail.db');
 }
 
-export function initDatabase(dbFilePath?: string): Database.Database {
+export async function initDatabase(dbFilePath?: string): Promise<Database> {
   if (db) return db;
 
-  const targetPath = dbFilePath || getDatabasePath();
-  const dir = path.dirname(targetPath);
+  if (!SQL) {
+    SQL = await initSqlJs();
+  }
+
+  currentDbPath = dbFilePath || getDatabasePath();
+  const dir = path.dirname(currentDbPath);
   initializeMasterKey(dir);
 
-  db = new Database(targetPath);
-  db.pragma('journal_mode = WAL');
-  db.pragma('foreign_keys = ON');
+  if (fs.existsSync(currentDbPath)) {
+    try {
+      const fileBuffer = fs.readFileSync(currentDbPath);
+      db = new SQL.Database(fileBuffer);
+    } catch {
+      db = new SQL.Database();
+    }
+  } else {
+    db = new SQL.Database();
+  }
 
   // Create tables
-  db.exec(`
+  db.run(`
     CREATE TABLE IF NOT EXISTS mailboxes (
       id TEXT PRIMARY KEY,
       email TEXT NOT NULL UNIQUE,
@@ -65,8 +77,7 @@ export function initDatabase(dbFilePath?: string): Database.Database {
       status TEXT NOT NULL DEFAULT 'pending',
       sent_at INTEGER,
       mailbox_used TEXT,
-      error_log TEXT,
-      FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+      error_log TEXT
     );
 
     CREATE TABLE IF NOT EXISTS send_logs (
@@ -82,122 +93,144 @@ export function initDatabase(dbFilePath?: string): Database.Database {
     CREATE INDEX IF NOT EXISTS idx_contacts_campaign ON contacts(campaign_id);
     CREATE INDEX IF NOT EXISTS idx_contacts_status ON contacts(campaign_id, status);
     CREATE INDEX IF NOT EXISTS idx_send_logs_timestamp ON send_logs(timestamp DESC);
-    CREATE INDEX IF NOT EXISTS idx_send_logs_campaign ON send_logs(campaign_id);
   `);
 
-  // Daily quota reset check
-  checkDailyQuotaReset();
-
+  persistDatabase();
   return db;
 }
 
-export function getDb(): Database.Database {
+export function persistDatabase(): void {
+  if (db && currentDbPath) {
+    try {
+      const data = db.export();
+      fs.writeFileSync(currentDbPath, Buffer.from(data));
+    } catch (err) {
+      console.error('[DB] Failed to persist database to disk:', err);
+    }
+  }
+}
+
+function getDatabase(): Database {
   if (!db) {
-    return initDatabase();
+    throw new Error('Database not initialized. Call initDatabase() first.');
   }
   return db;
 }
 
-// Reset daily limit count if a new day has arrived
-export function checkDailyQuotaReset(): void {
-  const today = new Date().toISOString().split('T')[0];
-  if (lastResetDateStr !== today) {
-    lastResetDateStr = today;
-    const database = getDb();
-    // In production, we can also store the last reset date in a settings table
-    // For simplicity, reset if date changes
+function queryAll<T>(sql: string, params: any[] = []): T[] {
+  const database = getDatabase();
+  const stmt = database.prepare(sql);
+  if (params.length > 0) {
+    stmt.bind(params);
   }
+  const results: T[] = [];
+  while (stmt.step()) {
+    results.push(stmt.getAsObject() as T);
+  }
+  stmt.free();
+  return results;
+}
+
+function queryOne<T>(sql: string, params: any[] = []): T | undefined {
+  const list = queryAll<T>(sql, params);
+  return list[0];
+}
+
+function execute(sql: string, params: any[] = []): void {
+  const database = getDatabase();
+  database.run(sql, params);
+  persistDatabase();
 }
 
 // ----------------- Mailbox Operations -----------------
 
 export function getAllMailboxes(): MailboxRecord[] {
-  const database = getDb();
-  // Auto-recover expired cooldowns
   const now = Date.now();
-  database.prepare(`
-    UPDATE mailboxes 
-    SET status = 'active', cooldown_until = NULL, error_message = NULL 
-    WHERE status = 'cooldown' AND cooldown_until IS NOT NULL AND cooldown_until <= ?
-  `).run(now);
+  execute(
+    `UPDATE mailboxes SET status = 'active', cooldown_until = NULL, error_message = NULL 
+     WHERE status = 'cooldown' AND cooldown_until IS NOT NULL AND cooldown_until <= ?`,
+    [now]
+  );
 
-  return database.prepare('SELECT * FROM mailboxes ORDER BY created_at DESC').all() as MailboxRecord[];
+  return queryAll<MailboxRecord>('SELECT * FROM mailboxes ORDER BY created_at DESC');
 }
 
 export function getMailboxById(id: string): MailboxRecord | undefined {
-  const database = getDb();
-  return database.prepare('SELECT * FROM mailboxes WHERE id = ?').get(id) as MailboxRecord | undefined;
+  return queryOne<MailboxRecord>('SELECT * FROM mailboxes WHERE id = ?', [id]);
 }
 
 export function insertMailbox(mailbox: MailboxRecord): void {
-  const database = getDb();
-  database.prepare(`
-    INSERT INTO mailboxes (id, email, host, port, encrypted_password, provider, daily_limit, sent_today, status, cooldown_until, error_message, created_at)
-    VALUES (@id, @email, @host, @port, @encrypted_password, @provider, @daily_limit, @sent_today, @status, @cooldown_until, @error_message, @created_at)
-  `).run(mailbox);
+  execute(
+    `INSERT INTO mailboxes (id, email, host, port, encrypted_password, provider, daily_limit, sent_today, status, cooldown_until, error_message, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      mailbox.id,
+      mailbox.email,
+      mailbox.host,
+      mailbox.port,
+      mailbox.encrypted_password,
+      mailbox.provider,
+      mailbox.daily_limit,
+      mailbox.sent_today,
+      mailbox.status,
+      mailbox.cooldown_until || null,
+      mailbox.error_message || null,
+      mailbox.created_at
+    ]
+  );
 }
 
 export function updateMailbox(mailbox: Partial<MailboxRecord> & { id: string }): void {
-  const database = getDb();
   const fields: string[] = [];
-  const params: Record<string, any> = { id: mailbox.id };
+  const params: any[] = [];
 
   for (const [key, value] of Object.entries(mailbox)) {
     if (key !== 'id' && value !== undefined) {
-      fields.push(`${key} = @${key}`);
-      params[key] = value;
+      fields.push(`${key} = ?`);
+      params.push(value);
     }
   }
 
   if (fields.length > 0) {
-    database.prepare(`UPDATE mailboxes SET ${fields.join(', ')} WHERE id = @id`).run(params);
+    params.push(mailbox.id);
+    execute(`UPDATE mailboxes SET ${fields.join(', ')} WHERE id = ?`, params);
   }
 }
 
 export function deleteMailbox(id: string): void {
-  const database = getDb();
-  database.prepare('DELETE FROM mailboxes WHERE id = ?').run(id);
+  execute('DELETE FROM mailboxes WHERE id = ?', [id]);
 }
 
 export function incrementMailboxSentToday(id: string): void {
-  const database = getDb();
-  database.prepare('UPDATE mailboxes SET sent_today = sent_today + 1 WHERE id = ?').run(id);
+  execute('UPDATE mailboxes SET sent_today = sent_today + 1 WHERE id = ?', [id]);
 }
 
 export function setMailboxStatus(id: string, status: MailboxStatus, errorMessage?: string): void {
-  const database = getDb();
-  database.prepare('UPDATE mailboxes SET status = ?, error_message = ? WHERE id = ?').run(status, errorMessage || null, id);
+  execute('UPDATE mailboxes SET status = ?, error_message = ? WHERE id = ?', [status, errorMessage || null, id]);
 }
 
 export function setMailboxCooldown(id: string, durationMs: number = 6 * 3600 * 1000, reason?: string): void {
-  const database = getDb();
   const cooldownUntil = Date.now() + durationMs;
-  database.prepare(`
-    UPDATE mailboxes 
-    SET status = 'cooldown', cooldown_until = ?, error_message = ? 
-    WHERE id = ?
-  `).run(cooldownUntil, reason || 'Rate limited by server (6h cooldown)', id);
-}
-
-export function resetMailboxDailyCounters(): void {
-  const database = getDb();
-  database.prepare('UPDATE mailboxes SET sent_today = 0').run();
+  execute(
+    `UPDATE mailboxes SET status = 'cooldown', cooldown_until = ?, error_message = ? WHERE id = ?`,
+    [cooldownUntil, reason || 'Rate limited by server (6h cooldown)', id]
+  );
 }
 
 // ----------------- Campaign Operations -----------------
 
 export function getAllCampaigns(): (CampaignRecord & { total_contacts: number; sent_contacts: number; failed_contacts: number })[] {
-  const database = getDb();
-  const campaigns = database.prepare('SELECT * FROM campaigns ORDER BY created_at DESC').all() as CampaignRecord[];
+  const campaigns = queryAll<CampaignRecord>('SELECT * FROM campaigns ORDER BY created_at DESC');
 
   return campaigns.map(c => {
-    const stats = database.prepare(`
-      SELECT 
+    const stats = queryOne<{ total: number; sent: number; failed: number }>(
+      `SELECT 
         COUNT(*) as total,
         SUM(CASE WHEN status = 'sent' THEN 1 ELSE 0 END) as sent,
         SUM(CASE WHEN status IN ('failed', 'bounced') THEN 1 ELSE 0 END) as failed
-      FROM contacts WHERE campaign_id = ?
-    `).get(c.id) as { total: number; sent: number; failed: number };
+      FROM contacts WHERE campaign_id = ?`,
+      [c.id]
+    );
 
     return {
       ...c,
@@ -209,86 +242,98 @@ export function getAllCampaigns(): (CampaignRecord & { total_contacts: number; s
 }
 
 export function getCampaignById(id: string): CampaignRecord | undefined {
-  const database = getDb();
-  return database.prepare('SELECT * FROM campaigns WHERE id = ?').get(id) as CampaignRecord | undefined;
+  return queryOne<CampaignRecord>('SELECT * FROM campaigns WHERE id = ?', [id]);
 }
 
 export function insertCampaign(campaign: CampaignRecord): void {
-  const database = getDb();
-  database.prepare(`
-    INSERT INTO campaigns (id, name, template_subject, template_body, status, mailbox_ids, pacing_mode, created_at)
-    VALUES (@id, @name, @template_subject, @template_body, @status, @mailbox_ids, @pacing_mode, @created_at)
-  `).run(campaign);
+  execute(
+    `INSERT INTO campaigns (id, name, template_subject, template_body, status, mailbox_ids, pacing_mode, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      campaign.id,
+      campaign.name,
+      campaign.template_subject,
+      campaign.template_body,
+      campaign.status,
+      campaign.mailbox_ids,
+      campaign.pacing_mode,
+      campaign.created_at
+    ]
+  );
 }
 
 export function updateCampaign(campaign: Partial<CampaignRecord> & { id: string }): void {
-  const database = getDb();
   const fields: string[] = [];
-  const params: Record<string, any> = { id: campaign.id };
+  const params: any[] = [];
 
   for (const [key, value] of Object.entries(campaign)) {
     if (key !== 'id' && value !== undefined) {
-      fields.push(`${key} = @${key}`);
-      params[key] = value;
+      fields.push(`${key} = ?`);
+      params.push(value);
     }
   }
 
   if (fields.length > 0) {
-    database.prepare(`UPDATE campaigns SET ${fields.join(', ')} WHERE id = @id`).run(params);
+    params.push(campaign.id);
+    execute(`UPDATE campaigns SET ${fields.join(', ')} WHERE id = ?`, params);
   }
 }
 
 export function updateCampaignStatus(id: string, status: CampaignStatus): void {
-  const database = getDb();
-  database.prepare('UPDATE campaigns SET status = ? WHERE id = ?').run(status, id);
+  execute('UPDATE campaigns SET status = ? WHERE id = ?', [status, id]);
 }
 
-
 export function deleteCampaign(id: string): void {
-  const database = getDb();
-  const transaction = database.transaction(() => {
-    database.prepare('DELETE FROM contacts WHERE campaign_id = ?').run(id);
-    database.prepare('DELETE FROM send_logs WHERE campaign_id = ?').run(id);
-    database.prepare('DELETE FROM campaigns WHERE id = ?').run(id);
-  });
-  transaction();
+  execute('DELETE FROM contacts WHERE campaign_id = ?', [id]);
+  execute('DELETE FROM send_logs WHERE campaign_id = ?', [id]);
+  execute('DELETE FROM campaigns WHERE id = ?', [id]);
 }
 
 // ----------------- Contact Operations -----------------
 
 export function insertContactsBatch(contacts: ContactRecord[]): void {
-  const database = getDb();
-  const insert = database.prepare(`
-    INSERT INTO contacts (id, campaign_id, email, first_name, last_name, company, custom_data, status, sent_at, mailbox_used, error_log)
-    VALUES (@id, @campaign_id, @email, @first_name, @last_name, @company, @custom_data, @status, @sent_at, @mailbox_used, @error_log)
-  `);
-
-  const insertMany = database.transaction((items: ContactRecord[]) => {
-    for (const item of items) {
-      insert.run(item);
+  const database = getDatabase();
+  database.run('BEGIN TRANSACTION;');
+  try {
+    for (const c of contacts) {
+      database.run(
+        `INSERT INTO contacts (id, campaign_id, email, first_name, last_name, company, custom_data, status, sent_at, mailbox_used, error_log)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          c.id,
+          c.campaign_id,
+          c.email,
+          c.first_name || null,
+          c.last_name || null,
+          c.company || null,
+          c.custom_data || null,
+          c.status,
+          c.sent_at || null,
+          c.mailbox_used || null,
+          c.error_log || null
+        ]
+      );
     }
-  });
-
-  insertMany(contacts);
+    database.run('COMMIT;');
+  } catch (err) {
+    database.run('ROLLBACK;');
+    throw err;
+  }
+  persistDatabase();
 }
 
 export function getContactsByCampaign(campaignId: string, limit: number = 500, offset: number = 0): ContactRecord[] {
-  const database = getDb();
-  return database.prepare(`
-    SELECT * FROM contacts 
-    WHERE campaign_id = ? 
-    ORDER BY status ASC, id ASC 
-    LIMIT ? OFFSET ?
-  `).all(campaignId, limit, offset) as ContactRecord[];
+  return queryAll<ContactRecord>(
+    `SELECT * FROM contacts WHERE campaign_id = ? ORDER BY status ASC, id ASC LIMIT ? OFFSET ?`,
+    [campaignId, limit, offset]
+  );
 }
 
 export function getPendingContacts(campaignId: string): ContactRecord[] {
-  const database = getDb();
-  return database.prepare(`
-    SELECT * FROM contacts 
-    WHERE campaign_id = ? AND status IN ('pending', 'queued')
-    ORDER BY id ASC
-  `).all(campaignId) as ContactRecord[];
+  return queryAll<ContactRecord>(
+    `SELECT * FROM contacts WHERE campaign_id = ? AND status IN ('pending', 'queued') ORDER BY id ASC`,
+    [campaignId]
+  );
 }
 
 export function updateContactStatus(
@@ -297,73 +342,71 @@ export function updateContactStatus(
   mailboxUsed?: string, 
   errorLog?: string
 ): void {
-  const database = getDb();
   const sentAt = status === 'sent' ? Date.now() : null;
-  database.prepare(`
-    UPDATE contacts 
-    SET status = ?, sent_at = COALESCE(?, sent_at), mailbox_used = COALESCE(?, mailbox_used), error_log = ? 
-    WHERE id = ?
-  `).run(status, sentAt, mailboxUsed || null, errorLog || null, id);
-}
-
-export function resetPendingForCampaign(campaignId: string): void {
-  const database = getDb();
-  database.prepare(`
-    UPDATE contacts 
-    SET status = 'pending', error_log = NULL 
-    WHERE campaign_id = ? AND status IN ('sending', 'queued')
-  `).run(campaignId);
+  execute(
+    `UPDATE contacts 
+     SET status = ?, sent_at = COALESCE(?, sent_at), mailbox_used = COALESCE(?, mailbox_used), error_log = ? 
+     WHERE id = ?`,
+    [status, sentAt, mailboxUsed || null, errorLog || null, id]
+  );
 }
 
 export function getCampaignContactStats(campaignId: string) {
-  const database = getDb();
-  return database.prepare(`
-    SELECT 
+  const stats = queryOne<{ total: number; sent: number; failed: number; pending: number }>(
+    `SELECT 
       COUNT(*) as total,
       SUM(CASE WHEN status = 'sent' THEN 1 ELSE 0 END) as sent,
       SUM(CASE WHEN status IN ('failed', 'bounced') THEN 1 ELSE 0 END) as failed,
       SUM(CASE WHEN status IN ('pending', 'queued', 'sending') THEN 1 ELSE 0 END) as pending
-    FROM contacts WHERE campaign_id = ?
-  `).get(campaignId) as { total: number; sent: number; failed: number; pending: number };
+    FROM contacts WHERE campaign_id = ?`,
+    [campaignId]
+  );
+
+  return {
+    total: stats?.total || 0,
+    sent: stats?.sent || 0,
+    failed: stats?.failed || 0,
+    pending: stats?.pending || 0
+  };
 }
 
 // ----------------- Send Logs Operations -----------------
 
 export function insertSendLog(log: SendLogRecord): void {
-  const database = getDb();
-  database.prepare(`
-    INSERT INTO send_logs (id, campaign_id, mailbox_id, recipient, status_code, message, timestamp)
-    VALUES (@id, @campaign_id, @mailbox_id, @recipient, @status_code, @message, @timestamp)
-  `).run(log);
+  execute(
+    `INSERT INTO send_logs (id, campaign_id, mailbox_id, recipient, status_code, message, timestamp)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [log.id, log.campaign_id || null, log.mailbox_id, log.recipient, log.status_code, log.message || null, log.timestamp]
+  );
 }
 
 export function getSendLogs(campaignId?: string, limit: number = 200): (SendLogRecord & { mailbox_email?: string })[] {
-  const database = getDb();
   if (campaignId) {
-    return database.prepare(`
-      SELECT l.*, m.email as mailbox_email 
-      FROM send_logs l
-      LEFT JOIN mailboxes m ON l.mailbox_id = m.id
-      WHERE l.campaign_id = ? 
-      ORDER BY l.timestamp DESC 
-      LIMIT ?
-    `).all(campaignId, limit) as (SendLogRecord & { mailbox_email?: string })[];
+    return queryAll<SendLogRecord & { mailbox_email?: string }>(
+      `SELECT l.*, m.email as mailbox_email 
+       FROM send_logs l
+       LEFT JOIN mailboxes m ON l.mailbox_id = m.id
+       WHERE l.campaign_id = ? 
+       ORDER BY l.timestamp DESC 
+       LIMIT ?`,
+      [campaignId, limit]
+    );
   }
 
-  return database.prepare(`
-    SELECT l.*, m.email as mailbox_email 
-    FROM send_logs l
-    LEFT JOIN mailboxes m ON l.mailbox_id = m.id
-    ORDER BY l.timestamp DESC 
-    LIMIT ?
-  `).all(limit) as (SendLogRecord & { mailbox_email?: string })[];
+  return queryAll<SendLogRecord & { mailbox_email?: string }>(
+    `SELECT l.*, m.email as mailbox_email 
+     FROM send_logs l
+     LEFT JOIN mailboxes m ON l.mailbox_id = m.id
+     ORDER BY l.timestamp DESC 
+     LIMIT ?`,
+    [limit]
+  );
 }
 
 export function clearSendLogs(campaignId?: string): void {
-  const database = getDb();
   if (campaignId) {
-    database.prepare('DELETE FROM send_logs WHERE campaign_id = ?').run(campaignId);
+    execute('DELETE FROM send_logs WHERE campaign_id = ?', [campaignId]);
   } else {
-    database.prepare('DELETE FROM send_logs').run();
+    execute('DELETE FROM send_logs');
   }
 }

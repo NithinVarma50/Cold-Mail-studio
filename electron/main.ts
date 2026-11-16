@@ -68,10 +68,10 @@ function openAndFocusDashboard() {
   mainWindow.webContents.send('navigate:dashboard');
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // Initialize embedded SQLite database
   try {
-    initDatabase();
+    await initDatabase();
     console.log('[DB] Local SQLite database initialized successfully.');
   } catch (err) {
     console.error('[DB] Failed to initialize SQLite database:', err);

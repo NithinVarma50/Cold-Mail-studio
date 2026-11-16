@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@types/canvas-confetti": "^1.9.0",
-    "better-sqlite3": "^13.2.0",
+    "@types/sql.js": "^1.4.11",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
     "lucide-react": "^1.73.0",
@@ -22,12 +22,12 @@
     "papaparse": "^5.7.1",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
+    "sql.js": "^1.16.0",
     "tailwind-merge": "^3.7.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.5",
-    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.6.6",
     "@types/nodemailer": "^8.0.2",
     "@types/papaparse": "^5.5.2",
