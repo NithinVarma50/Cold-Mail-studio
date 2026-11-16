@@ -1,0 +1,11 @@
+email,first_name,last_name,company,role,industry
+alex.rivera@techventures.io,Alex,Rivera,TechVentures,VP of Growth,SaaS
+sarah.connor@cyberdyne.ai,Sarah,Connor,Cyberdyne Systems,Head of Engineering,AI Robotics
+marcus.vance@apexcapital.co,Marcus,Vance,Apex Capital,Managing Partner,Fintech
+elena.rostova@cloudscale.net,Elena,Rostova,CloudScale,CTO,Cloud Infrastructure
+david.kim@innovatecorp.com,David,Kim,Innovate Corp,Director of Product,Enterprise Software
+rachel.adams@solarisgreen.org,Rachel,Adams,,Operations Lead,CleanTech
+jordan.bell@stratasolutions.com,Jordan,Bell,Strata Solutions,Founder,Consulting
+alex.rivera@techventures.io,Alex,Rivera,TechVentures,VP of Growth,SaaS
+invalid-email-format-example,Test,Invalid,Broken Domain,QA,Testing
+thomas.wright@quantumflow.dev,Thomas,Wright,QuantumFlow,Principal Architect,DevTools
