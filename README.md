@@ -9,7 +9,7 @@
 
 **100% LOCALLY RUNNING DESKTOP SOFTWARE • ZERO EXTERNAL CLOUD BACKEND • EMBEDDED SQLITE DATABASE**
 
-*High-deliverability cold outreach software running completely offline on your computer with multi-mailbox rotation, reactive 6-hour failover, organic human pacing, and instant global hotkey (`Ctrl + M`).*
+*High-deliverability cold outreach software running completely offline on your computer with multi-mailbox rotation, reactive 6-hour failover, organic human pacing, and instant global desktop hotkey (`Ctrl + M`).*
 
 </div>
 
@@ -23,63 +23,98 @@ ColdMail Studio registers a desktop-wide global shortcut:
 
 ---
 
-## 📥 How to Download & Run on Your Desktop
+## 🚀 Quick Setup & Execution Guide
 
-Follow these step-by-step commands to get ColdMail Studio running on your computer.
-
-### 1. Prerequisites
-Ensure you have **Node.js** (v18 or higher) and **Git** installed on your system:
-- Check Node.js: `node -v`
-- Check npm: `npm -v`
-- Check Git: `git -v`
-
-If you don't have Node.js installed, download it from [nodejs.org](https://nodejs.org/) (LTS recommended).
+Follow the instructions below depending on whether you already have the folder on your machine or you are downloading it fresh from GitHub.
 
 ---
 
-### 2. Clone the Repository
-Open your terminal (PowerShell, Command Prompt, or Terminal on Mac/Linux) and run:
+### Option A: If You Already Have the Project on Your Computer
 
-```bash
-git clone https://github.com/NithinVarma50/Cold-Mail-studio.git
-cd Cold-Mail-studio
-```
+If you already downloaded or extracted the project into your Downloads folder:
 
----
-
-### 3. Install Dependencies
-Install all required packages (Electron, SQLite engine, React, Tailwind CSS, Nodemailer):
-
-```bash
-npm install
-```
-
----
-
-### 4. Build the Application
-Compile the Electron backend and the Vite + React frontend:
-
-```bash
-npm run build
-```
+1. **Open PowerShell or Terminal**.
+2. **Navigate into the project folder first** (CRITICAL: Do not run `npm install` from `C:\Users\Dell`):
+   ```powershell
+   cd "C:\Users\Dell\Downloads\EMail automation"
+   ```
+3. **Install dependencies**:
+   ```powershell
+   npm install
+   ```
+4. **Build the application**:
+   ```powershell
+   npm run build
+   ```
+5. **Launch the desktop app**:
+   ```powershell
+   npm start
+   ```
 
 ---
 
-### 5. Launch ColdMail Studio Desktop App
-Run the compiled desktop app:
+### Option B: If You Are Cloning Fresh from GitHub
 
-```bash
-npm start
-```
+If you are setting this up on a new computer or cloning from GitHub:
+
+1. **Make sure you have Node.js and Git installed**:
+   - Check Node.js: `node -v` (Needs v18, v20, or v22)
+   - Check Git: `git -v`
+   *(If not installed, get Node.js from [nodejs.org](https://nodejs.org/)).*
+
+2. **Clone the repository**:
+   ```powershell
+   git clone https://github.com/NithinVarma50/Cold-Mail-studio.git
+   ```
+
+3. **Navigate into the cloned folder**:
+   ```powershell
+   cd Cold-Mail-studio
+   ```
+
+4. **Install all packages**:
+   ```powershell
+   npm install
+   ```
+
+5. **Build the application**:
+   ```powershell
+   npm run build
+   ```
+
+6. **Launch ColdMail Studio**:
+   ```powershell
+   npm start
+   ```
 
 ---
 
-### 💻 Development Mode (With Live Hot-Reloading)
-If you want to modify code and see instant updates:
-
-```bash
+### 💻 Development Mode (Live Hot-Reloading)
+If you want to edit code and test live with hot-reloading:
+```powershell
 npm run dev
 ```
+
+---
+
+## ⚠️ Common Errors & Troubleshooting
+
+### Error: `ENOENT: no such file or directory, open 'C:\Users\Dell\package.json'`
+```text
+npm error code ENOENT
+npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open 'C:\Users\Dell\package.json'
+```
+#### Why this happens:
+Your terminal is currently located in your home folder (`C:\Users\Dell`) instead of the project directory where `package.json` resides.
+
+#### How to fix:
+Navigate into the folder before running any `npm` commands:
+```powershell
+cd "C:\Users\Dell\Downloads\EMail automation"
+# OR if cloned from git:
+# cd Cold-Mail-studio
+```
+Then run `npm install` again.
 
 ---
 
@@ -169,17 +204,19 @@ A pre-formatted sample file [`sample_contacts.csv`](./sample_contacts.csv) is in
 
 ---
 
-## 🛠️ Summary of All CLI Commands
+## 📋 Full Command Reference
 
 | Command | Action |
 | :--- | :--- |
-| `git clone https://github.com/NithinVarma50/Cold-Mail-studio.git` | Clone the repository |
+| `cd "C:\Users\Dell\Downloads\EMail automation"` | Navigate to existing local project folder |
+| `git clone https://github.com/NithinVarma50/Cold-Mail-studio.git` | Clone the repository on a new machine |
+| `cd Cold-Mail-studio` | Enter cloned repository directory |
 | `npm install` | Install all dependencies |
-| `npm run build` | Compile both Electron backend and React UI |
-| `npm start` | Launch the desktop application |
-| `npm run dev` | Launch in development mode with hot-reloading |
-| `npm run build:ui` | Build only the frontend bundle |
-| `npm run build:electron` | Compile only the Electron backend TypeScript |
+| `npm run build` | Build Electron backend & React UI |
+| `npm start` | Launch ColdMail Studio application |
+| `npm run dev` | Launch development mode with hot-reloading |
+| `npm run build:ui` | Build frontend only |
+| `npm run build:electron` | Build Electron TypeScript backend only |
 
 ---
 
