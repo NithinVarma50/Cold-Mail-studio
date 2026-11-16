@@ -9,167 +9,96 @@
 
 **100% LOCALLY RUNNING DESKTOP SOFTWARE • ZERO EXTERNAL CLOUD BACKEND • EMBEDDED SQLITE DATABASE**
 
-*High-deliverability cold outreach software running completely offline on your computer with multi-mailbox rotation, reactive 6-hour failover, organic human pacing, and instant global desktop hotkeys.*
+*High-deliverability cold outreach software running completely offline on your computer with multi-mailbox rotation, reactive 6-hour failover, organic human pacing, and instant global desktop hotkeys (`Ctrl + M`, `F9`).*
 
 </div>
 
 ---
 
-## ⚡ Desktop Hotkeys & Keyboard Shortcuts
+## ⚡ 1-Line Setup & Run (Copy & Paste Into PowerShell)
 
-ColdMail Studio supports multiple global and in-app shortcuts to make navigation effortless:
+Open PowerShell and paste this **single line** (it works from anywhere, even `PS C:\Users\Dell>`):
 
-### 🌐 System-Wide Global Hotkeys (Works anywhere on desktop, even when minimized):
+```powershell
+git clone https://github.com/NithinVarma50/Cold-Mail-studio.git; cd Cold-Mail-studio; npm install; npm run build; npm start
+```
+
+### What this single command does automatically:
+1. Clones the project from GitHub into `Cold-Mail-studio`
+2. Enters the folder (`cd Cold-Mail-studio`)
+3. Installs all dependencies (`npm install`)
+4. Compiles the Electron backend and React UI (`npm run build`)
+5. Launches the ColdMail Studio desktop application window (`npm start`)
+
+---
+
+## 🖱️ 1-Click Double-Click Launcher (`start.bat`)
+
+Once downloaded or cloned:
+1. Open the **`Cold-Mail-studio`** folder.
+2. Double-click the file **`start.bat`**.
+3. It will automatically check dependencies, compile, and open ColdMail Studio without you typing any commands!
+
+*(On macOS or Linux, run `./start.sh` in your terminal).*
+
+---
+
+## ⌨️ Desktop Hotkeys & Quick Access
+
+ColdMail Studio is equipped with global and in-app shortcuts:
+
+### 🌐 System-Wide Hotkeys (Works anywhere on your desktop, even when minimized):
 | Shortcut | Action | Description |
 | :--- | :--- | :--- |
-| **`Ctrl + M`** (or `Cmd + M`) | Reveal & Focus App | Primary global shortcut to restore, focus, and open the dashboard |
-| **`Ctrl + Shift + M`** | Fail-Safe Hotkey | Guaranteed conflict-free if another OS program hooks `Ctrl+M` |
+| **`Ctrl + M`** (or `Cmd + M`) | Reveal & Focus App | Primary global shortcut to bring the dashboard to the front |
+| **`Ctrl + Shift + M`** | Fail-Safe Hotkey | Guaranteed conflict-free if another app hooks `Ctrl + M` |
 | **`F9`** | 1-Key Quick Toggle | Instant single-key launcher to toggle dashboard to the front |
 
-### ⌨️ In-App Quick Navigation:
+### 🎯 In-App Shortcuts:
 | Shortcut | Action |
 | :--- | :--- |
 | **`Ctrl + 1`** | Navigate to Inboxes / Dashboard overview |
-| **`Ctrl + 2`** | Navigate to New Campaign Wizard |
+| **`Ctrl + 2`** / **`Ctrl + N`** | Start New Campaign Wizard |
 | **`Ctrl + 3`** | Navigate to Live Transmission Telemetry Console |
 | **`Ctrl + 4`** | Navigate to Transmission Audit Logs |
-| **`Ctrl + N`** | Quick New Campaign |
 | **`Ctrl + B`** | Open Connect Mailbox Modal |
 | **`Ctrl + /`** or **`?`** | Open Interactive Shortcuts Cheat Sheet |
 
 ---
 
-## 🚀 Quick Setup & Execution Guide
+## 🔄 Daily Launch & Update Commands
 
-Follow the instructions below depending on whether you already have the folder on your machine or you are downloading it fresh from GitHub.
-
----
-
-### Option A: If You Already Have the Project on Your Computer
-
-If you already downloaded or extracted the project into your Downloads folder:
-
-1. **Open PowerShell or Terminal**.
-2. **Navigate into the project folder first** (*CRITICAL: Do not run `npm install` from `C:\Users\Dell`*):
-   ```powershell
-   cd "C:\Users\Dell\Downloads\EMail automation"
-   ```
-3. **Install dependencies**:
-   ```powershell
-   npm install
-   ```
-4. **Build the application**:
-   ```powershell
-   npm run build
-   ```
-5. **Launch the desktop app**:
-   ```powershell
-   npm start
-   ```
-
----
-
-### Option B: If You Are Cloning Fresh from GitHub
-
-If you are setting this up on a new computer or cloning from GitHub:
-
-1. **Make sure you have Node.js and Git installed**:
-   - Check Node.js: `node -v` (Needs v18, v20, or v22)
-   - Check Git: `git -v`
-   *(If not installed, get Node.js from [nodejs.org](https://nodejs.org/)).*
-
-2. **Clone the repository**:
-   ```powershell
-   git clone https://github.com/NithinVarma50/Cold-Mail-studio.git
-   ```
-
-3. **Navigate into the cloned folder**:
-   ```powershell
-   cd Cold-Mail-studio
-   ```
-
-4. **Install all packages**:
-   ```powershell
-   npm install
-   ```
-
-5. **Build the application**:
-   ```powershell
-   npm run build
-   ```
-
-6. **Launch ColdMail Studio**:
-   ```powershell
-   npm start
-   ```
-
----
-
-### 💻 Development Mode (Live Hot-Reloading)
-If you want to edit code and test live with hot-reloading:
+### How to Start the App Later:
 ```powershell
-npm run dev
+cd Cold-Mail-studio; npm start
+```
+*(Or simply double-click `start.bat`).*
+
+### How to Update to the Latest Version:
+```powershell
+cd Cold-Mail-studio; git pull; npm install; npm run build; npm start
 ```
 
 ---
 
-## 🗑️ How to Completely Uninstall / Remove
+## 🗑️ How to Completely Uninstall / Clean Remove
 
-Since ColdMail Studio runs 100% locally with zero cloud footprint, all data is stored on your local disk. To cleanly and completely remove the software and its local SQLite database, run the following commands:
+ColdMail Studio runs 100% locally with zero cloud backend. To cleanly remove both the software and its local embedded SQLite database:
 
-### In Windows PowerShell:
+### In Windows PowerShell (Run from anywhere):
 ```powershell
-# 1. Delete the local embedded SQLite database and encryption vault:
-Remove-Item -Recurse -Force "$env:APPDATA\.email-automation" -ErrorAction SilentlyContinue
-
-# 2. Delete the project folder:
-# If in your Downloads folder:
-Remove-Item -Recurse -Force "C:\Users\Dell\Downloads\EMail automation" -ErrorAction SilentlyContinue
-
-# Or if you cloned it as Cold-Mail-studio:
-Remove-Item -Recurse -Force "Cold-Mail-studio" -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force "$env:APPDATA\.email-automation" -ErrorAction SilentlyContinue; Remove-Item -Recurse -Force "Cold-Mail-studio" -ErrorAction SilentlyContinue
 ```
 
 ### In Windows Command Prompt (CMD):
 ```cmd
-:: 1. Delete the local embedded SQLite database:
-rmdir /s /q "%APPDATA%\.email-automation"
-
-:: 2. Delete the project folder:
-rmdir /s /q "C:\Users\Dell\Downloads\EMail automation"
-:: OR if cloned:
-rmdir /s /q "Cold-Mail-studio"
+rmdir /s /q "%APPDATA%\.email-automation" & rmdir /s /q "Cold-Mail-studio"
 ```
 
 ### In macOS / Linux Terminal:
 ```bash
-# 1. Delete the local SQLite database and keys:
-rm -rf ~/.email-automation
-
-# 2. Delete the project directory:
-rm -rf Cold-Mail-studio
+rm -rf ~/.email-automation && rm -rf Cold-Mail-studio
 ```
-
----
-
-## ⚠️ Common Errors & Troubleshooting
-
-### Error: `ENOENT: no such file or directory, open 'C:\Users\Dell\package.json'`
-```text
-npm error code ENOENT
-npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open 'C:\Users\Dell\package.json'
-```
-#### Why this happens:
-Your terminal is currently located in your user root folder (`C:\Users\Dell`) instead of the project directory where `package.json` resides.
-
-#### How to fix:
-Navigate into the folder before running any `npm` commands:
-```powershell
-cd "C:\Users\Dell\Downloads\EMail automation"
-# OR if cloned from git:
-# cd Cold-Mail-studio
-```
-Then run `npm install` again.
 
 ---
 
@@ -257,17 +186,12 @@ There are two ways to immediately test:
 
 | Command | Action |
 | :--- | :--- |
-| `cd "C:\Users\Dell\Downloads\EMail automation"` | Navigate to existing local project folder |
-| `git clone https://github.com/NithinVarma50/Cold-Mail-studio.git` | Clone the repository on a new machine |
-| `cd Cold-Mail-studio` | Enter cloned repository directory |
-| `npm install` | Install all dependencies |
-| `npm run build` | Build Electron backend & React UI |
-| `npm start` | Launch ColdMail Studio application |
-| `npm run dev` | Launch development mode with hot-reloading |
-| `npm run build:ui` | Build frontend only |
-| `npm run build:electron` | Build Electron TypeScript backend only |
-| `rmdir /s /q "%APPDATA%\.email-automation"` | CMD: Clean remove local SQLite database & keys |
-| `Remove-Item -Recurse -Force "$env:APPDATA\.email-automation"` | PowerShell: Clean remove local database |
+| `git clone https://github.com/NithinVarma50/Cold-Mail-studio.git; cd Cold-Mail-studio; npm install; npm run build; npm start` | **All-in-One: Clone, Install, Build & Run** |
+| `cd Cold-Mail-studio; npm start` | Start the app anytime |
+| `start.bat` | Double-click launcher for Windows |
+| `./start.sh` | Bash script launcher for macOS / Linux |
+| `git pull; npm install; npm run build; npm start` | Update to the latest code and launch |
+| `Remove-Item -Recurse -Force "$env:APPDATA\.email-automation"; Remove-Item -Recurse -Force "Cold-Mail-studio"` | Completely uninstall app and local database |
 
 ---
 
